@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/linux_learning}
+    username: ${SPRING_DATASOURCE_USERNAME:linux_learning}
+    password: ${SPRING_DATASOURCE_PASSWORD:linux_learning}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+app:
+  sandbox:
+    provider: ${APP_SANDBOX_PROVIDER:vm-pool}
