@@ -1,6 +1,8 @@
 import type {
   ApiResponse,
   CheckTaskResponse,
+  CommandAttemptResponse,
+  CommandExerciseCatalogResponse,
   LabSessionResponse,
   LearningPathCode,
 } from './types'
@@ -57,5 +59,16 @@ export function checkTask(sessionId: number, taskId: number, commandSummary: str
 export function resetLabSession(sessionId: number) {
   return request<LabSessionResponse>(`/api/lab-sessions/${sessionId}/reset`, {
     method: 'POST',
+  })
+}
+
+export function getDefaultCommandExercises() {
+  return request<CommandExerciseCatalogResponse>('/api/command-exercises/default')
+}
+
+export function submitCommandAttempt(exerciseId: string, input: string, elapsedMs: number) {
+  return request<CommandAttemptResponse>(`/api/command-exercises/${exerciseId}/attempt`, {
+    method: 'POST',
+    body: JSON.stringify({ input, elapsedMs }),
   })
 }

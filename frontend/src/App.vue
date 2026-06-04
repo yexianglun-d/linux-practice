@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import TerminalFirstApp from './components/TerminalFirstApp.vue'
+import CommandLearningApp from './components/CommandLearningApp.vue'
 </script>
 
 <template>
-  <main class="root-terminal">
-    <TerminalFirstApp />
+  <main class="root-command">
+    <CommandLearningApp />
   </main>
 </template>

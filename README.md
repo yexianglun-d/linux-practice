@@ -1,11 +1,13 @@
 # Linux 实战学堂
 
-一个 Spring Boot + Vue 3 的 Linux 手敲实践学习平台原型。打开网站后自动进入全屏终端、创建默认学习会话，并通过终端指令完成学习、提示、判题、重置和进度更新。课程、实验、任务和判题规则全部由代码种子数据控制，不提供页面或接口形式的内容管理入口。
+一个 Spring Boot + Vue 3 的 Linux 命令学习平台原型。打开网站后先进入命令练习台：一次练一个命令，输入后即时判断拼写、参数和目标匹配度，并记录正确率、连续正确和章节进度。终端保留为章节完成后的实战验证入口，不再作为新手首屏。
+
+学习内容、实验、任务和判定规则全部由后端代码种子维护；改内容即改代码再发布，不提供页面或接口形式的内容管理入口。
 
 ## 目录
 
 - `backend/`：Spring Boot API、JPA 数据模型、WebSocket 终端、判题服务。
-- `frontend/`：Vue 3 + TypeScript 终端优先学员端。
+- `frontend/`：Vue 3 + TypeScript 命令练习台和实战终端入口。
 - `docker-compose.yml`：可选 PostgreSQL / Redis 本地依赖。
 
 ## 本地运行
@@ -41,6 +43,8 @@ SPRING_PROFILES_ACTIVE=postgres mvn spring-boot:run
 
 ## 已实现接口
 
+- `GET /api/command-exercises/default`
+- `POST /api/command-exercises/{id}/attempt`
 - `POST /api/lab-sessions/default`
 - `GET /api/lab-sessions/{id}`
 - `POST /api/lab-sessions/{id}/check`
@@ -49,9 +53,10 @@ SPRING_PROFILES_ACTIVE=postgres mvn spring-boot:run
 
 ## 当前边界
 
-- 默认 `InMemoryVmSandboxClient` 只模拟 VM 分配、终端输出和本地 transcript 判题，便于完整跑通产品闭环。
+- 命令练习内容先覆盖 `pwd`、`ls -la`、`cd /var/log`、`touch file`、`chmod 644 file`、`systemctl status nginx`、`grep "error" app.log`。
+- 默认 `InMemoryVmSandboxClient` 只模拟 VM 分配、终端输出和本地 transcript 判题，便于跑通实战验证闭环。
 - 生产接入真实 VM 时，替换 `VmSandboxClient`，在 VM 内执行判题脚本，并把会话/锁状态迁移到 Redis。
-- 学习内容维护方式是修改后端种子代码并重新发布；当前版本不包含内容管理页面、内容维护接口、支付、商业化和移动端 App。
+- 当前版本不包含支付、商业化和移动端 App。
 
 ## 验证
 
