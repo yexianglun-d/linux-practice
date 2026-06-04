@@ -56,4 +56,37 @@ class LabSessionServiceTest {
         assertThat(session.status()).isEqualTo("RUNNING");
         assertThat(session.labTitle()).contains("Nginx");
     }
+
+    @Test
+    void shouldPassFileTaskFromTerminalEvidence() {
+        LabSessionResponse session = labSessionService.startDefault(null);
+        Long fileTaskId = session.tasks().stream()
+                .filter(task -> task.instruction().contains("touch /tmp/linux-foundation/permission-ok"))
+                .findFirst()
+                .orElseThrow()
+                .taskId();
+
+        CheckTaskResponse checkResult = labSessionService.check(
+                session.id(),
+                new CheckTaskRequest(fileTaskId, "created /tmp/linux-foundation/permission-ok")
+        );
+
+        assertThat(checkResult.passed()).isTrue();
+        assertThat(checkResult.progressPercent()).isGreaterThan(0);
+    }
+
+    @Test
+    void shouldAcceptLongCheckEvidenceWithoutStorageOverflow() {
+        LabSessionResponse session = labSessionService.startDefault(null);
+        Long firstTaskId = session.tasks().getFirst().taskId();
+        String longEvidence = "explore\n".repeat(180) + "pwd\n/home/student";
+
+        CheckTaskResponse checkResult = labSessionService.check(
+                session.id(),
+                new CheckTaskRequest(firstTaskId, longEvidence)
+        );
+
+        assertThat(checkResult.passed()).isTrue();
+        assertThat(checkResult.progressPercent()).isGreaterThan(0);
+    }
 }

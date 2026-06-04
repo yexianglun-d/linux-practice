@@ -150,6 +150,9 @@ select:focus-visible {
 
 .status-pill {
   padding: 0 10px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-pill:first-child {
@@ -171,6 +174,65 @@ select:focus-visible {
   border-color: var(--green);
   background: var(--green-soft);
   color: var(--green);
+}
+
+.practice-focus {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 34%);
+  align-items: stretch;
+  min-height: 92px;
+  border-right: 1px solid var(--border-soft);
+  border-left: 1px solid var(--border-soft);
+  background:
+    linear-gradient(90deg, rgba(51, 255, 136, 0.09), transparent 42%),
+    #08100d;
+}
+
+.focus-copy {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px 18px;
+}
+
+.focus-kicker {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.focus-copy strong {
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.focus-copy p {
+  max-width: 980px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.focus-command {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 14px 18px;
+  border-left: 1px solid var(--border-soft);
+  background: rgba(51, 255, 136, 0.055);
+  color: var(--green);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .terminal-screen {
@@ -402,6 +464,31 @@ select:focus-visible {
   .terminal-tool,
   .status-pill {
     min-height: 44px;
+  }
+
+  .practice-focus {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    border-right: 0;
+    border-left: 0;
+  }
+
+  .focus-copy {
+    padding: 12px;
+  }
+
+  .focus-copy strong,
+  .focus-command {
+    font-size: 15px;
+  }
+
+  .focus-command {
+    justify-content: start;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border-soft);
+    border-left: 0;
+    text-align: left;
   }
 
   .terminal-screen {

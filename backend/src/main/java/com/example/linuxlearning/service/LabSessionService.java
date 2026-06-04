@@ -30,6 +30,8 @@ import java.util.Map;
 @Service
 public class LabSessionService {
 
+    private static final int MAX_COMMAND_SUMMARY_LENGTH = 1000;
+
     private final UserAccountRepository userAccountRepository;
     private final LabRepository labRepository;
     private final LabTaskRepository labTaskRepository;
@@ -100,8 +102,9 @@ public class LabSessionService {
         if (!task.getLab().getId().equals(session.getLab().getId())) {
             throw new BadRequestException("任务不属于当前实验");
         }
-        CheckResult result = taskCheckerService.check(session, task, request.commandSummary());
-        submissionRepository.save(new Submission(session, task, result.passed(), result.message(), nullToBlank(request.commandSummary())));
+        String commandSummary = nullToBlank(request.commandSummary());
+        CheckResult result = taskCheckerService.check(session, task, commandSummary);
+        submissionRepository.save(new Submission(session, task, result.passed(), result.message(), truncateForStorage(commandSummary)));
         int progressPercent = calculateProgress(session);
         session.markProgress(progressPercent);
         if (session.getStatus() == LabSessionStatus.PASSED) {
@@ -202,5 +205,12 @@ public class LabSessionService {
 
     private String nullToBlank(String value) {
         return value == null ? "" : value;
+    }
+
+    private String truncateForStorage(String value) {
+        if (value.length() <= MAX_COMMAND_SUMMARY_LENGTH) {
+            return value;
+        }
+        return value.substring(value.length() - MAX_COMMAND_SUMMARY_LENGTH);
     }
 }
