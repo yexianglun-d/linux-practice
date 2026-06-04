@@ -21,7 +21,10 @@ public record LabSessionResponse(
     public record TaskProgressView(
             Long taskId,
             String title,
+            String instruction,
             String checkerType,
+            String hint,
+            int score,
             boolean passed,
             String lastMessage,
             OffsetDateTime checkedAt

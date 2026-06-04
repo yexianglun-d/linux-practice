@@ -6,12 +6,14 @@ import com.example.linuxlearning.domain.Lab;
 import com.example.linuxlearning.domain.LabSession;
 import com.example.linuxlearning.domain.LabSessionStatus;
 import com.example.linuxlearning.domain.LabTask;
+import com.example.linuxlearning.domain.LearningPath;
+import com.example.linuxlearning.domain.PublishStatus;
 import com.example.linuxlearning.domain.Submission;
 import com.example.linuxlearning.domain.UserAccount;
 import com.example.linuxlearning.dto.CheckTaskRequest;
 import com.example.linuxlearning.dto.CheckTaskResponse;
 import com.example.linuxlearning.dto.LabSessionResponse;
-import com.example.linuxlearning.dto.StartLabSessionRequest;
+import com.example.linuxlearning.dto.StartDefaultLabSessionRequest;
 import com.example.linuxlearning.repository.LabRepository;
 import com.example.linuxlearning.repository.LabSessionRepository;
 import com.example.linuxlearning.repository.LabTaskRepository;
@@ -56,10 +58,16 @@ public class LabSessionService {
     }
 
     @Transactional
-    public LabSessionResponse start(StartLabSessionRequest request) {
-        UserAccount user = resolveUser(request.userId());
-        Lab lab = labRepository.findById(request.labId())
-                .orElseThrow(() -> new NotFoundException("实验不存在"));
+    public LabSessionResponse startDefault(StartDefaultLabSessionRequest request) {
+        LearningPath learningPath = request == null || request.learningPath() == null
+                ? LearningPath.BEGINNER
+                : request.learningPath();
+        UserAccount user = resolveUser(learningPath);
+        Lab lab = resolveDefaultLab(learningPath);
+        return startSession(user, lab);
+    }
+
+    private LabSessionResponse startSession(UserAccount user, Lab lab) {
         SandboxAllocation allocation = vmSandboxClient.allocate(lab);
         OffsetDateTime now = OffsetDateTime.now();
         LabSession session = new LabSession(
@@ -119,13 +127,15 @@ public class LabSessionService {
         return toResponse(session);
     }
 
-    private UserAccount resolveUser(Long userId) {
-        if (userId != null) {
-            return userAccountRepository.findById(userId)
-                    .orElseThrow(() -> new NotFoundException("用户不存在"));
-        }
-        return userAccountRepository.findFirstByOrderByIdAsc()
+    private UserAccount resolveUser(LearningPath learningPath) {
+        return userAccountRepository.findFirstByLearningPathOrderByIdAsc(learningPath)
+                .or(userAccountRepository::findFirstByOrderByIdAsc)
                 .orElseThrow(() -> new NotFoundException("缺少默认学员"));
+    }
+
+    private Lab resolveDefaultLab(LearningPath learningPath) {
+        return labRepository.findFirstByStatusAndLearningPathOrderByIdAsc(PublishStatus.PUBLISHED, learningPath)
+                .orElseThrow(() -> new NotFoundException("缺少默认学习实验"));
     }
 
     private LabSession findSession(Long sessionId) {
@@ -157,7 +167,10 @@ public class LabSessionService {
                     return new LabSessionResponse.TaskProgressView(
                             task.getId(),
                             task.getTitle(),
+                            task.getInstruction(),
                             task.getCheckerType().name(),
+                            task.getHint(),
+                            task.getScore(),
                             submission != null && submission.isPassed(),
                             submission == null ? "尚未检查" : submission.getMessage(),
                             submission == null ? null : submission.getCheckedAt()

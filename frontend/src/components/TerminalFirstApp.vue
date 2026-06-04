@@ -3,12 +3,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Activity, CircleHelp, Command, RotateCcw, TerminalSquare } from '@lucide/vue'
 import {
   checkTask,
-  getCatalog,
   getLabSession,
   resetLabSession,
-  startLabSession,
+  startDefaultLabSession,
 } from '../api'
-import type { CatalogResponse, LabSessionResponse, LabView } from '../types'
+import type { LabSessionResponse, LearningPathCode } from '../types'
 
 type LineKind = 'system' | 'prompt' | 'output' | 'success' | 'warning' | 'error' | 'muted'
 
@@ -18,14 +17,6 @@ interface TerminalLine {
   text: string
 }
 
-interface LabChoice {
-  lab: LabView
-  moduleTitle: string
-  lessonTitle: string
-}
-
-const catalog = ref<CatalogResponse | null>(null)
-const selectedLab = ref<LabChoice | null>(null)
 const session = ref<LabSessionResponse | null>(null)
 const terminalLines = ref<TerminalLine[]>([])
 const evidenceLines = ref<string[]>([])
@@ -33,7 +24,7 @@ const input = ref('')
 const ready = ref(false)
 const booting = ref(true)
 const paletteOpen = ref(false)
-const currentMode = ref<'BEGINNER' | 'OPS'>('BEGINNER')
+const currentMode = ref<LearningPathCode>('BEGINNER')
 const commandHistory = ref<string[]>([])
 const historyIndex = ref(-1)
 const terminalBody = ref<HTMLElement | null>(null)
@@ -54,13 +45,8 @@ const statusText = computed(() => {
 
 const progressPercent = computed(() => session.value?.progressPercent ?? 0)
 const currentTask = computed(() => {
-  if (!selectedLab.value) {
-    return null
-  }
-  const taskProgress = session.value?.tasks ?? []
-  return selectedLab.value.lab.tasks.find((task) => {
-    return !taskProgress.find((progress) => progress.taskId === task.id)?.passed
-  }) ?? selectedLab.value.lab.tasks[0] ?? null
+  const tasks = session.value?.tasks ?? []
+  return tasks.find((task) => !task.passed) ?? tasks[0] ?? null
 })
 
 onMounted(() => {
@@ -80,35 +66,25 @@ async function bootDefaultSession() {
   ready.value = false
   clearTerminal()
   append('system', 'Booting Linux Lab...')
-  append('muted', 'Loading catalog from /api/catalog')
   try {
-    catalog.value = await getCatalog()
-    append('success', 'Catalog loaded. Selecting default learning environment.')
-    const labChoice = chooseLab('BEGINNER')
-    if (!labChoice) {
-      append('error', 'No published lab found. Please add a lab in /admin.')
-      booting.value = false
-      return
-    }
-    await startLab(labChoice, 'BEGINNER')
+    await startLab('BEGINNER')
   } catch (error) {
     append('error', error instanceof Error ? error.message : 'Boot failed')
     booting.value = false
   }
 }
 
-async function startLab(labChoice: LabChoice, mode: 'BEGINNER' | 'OPS') {
+async function startLab(mode: LearningPathCode) {
   socket?.close()
   ready.value = false
   booting.value = true
   currentMode.value = mode
-  selectedLab.value = labChoice
   session.value = null
   evidenceLines.value = []
-  append('system', `Allocating VM image: ${labChoice.lab.imageRef}`)
-  append('muted', `Path: ${mode.toLowerCase()} · ${labChoice.moduleTitle} / ${labChoice.lessonTitle}`)
-  const nextSession = await startLabSession(labChoice.lab.id)
+  append('muted', `Path: ${mode.toLowerCase()} · preparing code-defined Linux lab`)
+  const nextSession = await startDefaultLabSession(mode)
   session.value = nextSession
+  append('system', `Allocated lab: ${nextSession.labTitle}`)
   connectTerminal(nextSession.id)
 }
 
@@ -250,7 +226,7 @@ async function runCheck() {
   const task = currentTask.value
   append('muted', `Running checker: ${task.checkerType}`)
   try {
-    const result = await checkTask(session.value.id, task.id, evidenceLines.value.join('\n'))
+    const result = await checkTask(session.value.id, task.taskId, evidenceLines.value.join('\n'))
     session.value = await getLabSession(session.value.id)
     append(result.passed ? 'success' : 'warning', result.message)
     append('muted', `Progress: ${result.progressPercent}%`)
@@ -262,14 +238,9 @@ async function runCheck() {
   }
 }
 
-async function switchPath(mode: 'BEGINNER' | 'OPS') {
-  const labChoice = chooseLab(mode)
-  if (!labChoice) {
-    append('error', `No lab found for path ${mode.toLowerCase()}.`)
-    return
-  }
+async function switchPath(mode: LearningPathCode) {
   append('system', `Switching path to ${mode.toLowerCase()}...`)
-  await startLab(labChoice, mode)
+  await startLab(mode)
 }
 
 async function resetCurrentSession() {
@@ -284,31 +255,6 @@ async function resetCurrentSession() {
   session.value = resetSession
   evidenceLines.value = []
   connectTerminal(resetSession.id)
-}
-
-function chooseLab(mode: 'BEGINNER' | 'OPS') {
-  const choices = flattenLabs()
-  if (mode === 'BEGINNER') {
-    return choices[0] ?? null
-  }
-  return choices.find((choice) => {
-    const value = `${choice.moduleTitle} ${choice.lessonTitle} ${choice.lab.title}`.toLowerCase()
-    return value.includes('服务') || value.includes('nginx') || value.includes('docker') || value.includes('k8s')
-  }) ?? choices[0] ?? null
-}
-
-function flattenLabs() {
-  const choices: LabChoice[] = []
-  for (const course of catalog.value?.courses ?? []) {
-    for (const module of course.modules) {
-      for (const lesson of module.lessons) {
-        if (lesson.lab) {
-          choices.push({ lab: lesson.lab, moduleTitle: module.title, lessonTitle: lesson.title })
-        }
-      }
-    }
-  }
-  return choices
 }
 
 function announceCurrentTask() {
@@ -392,7 +338,7 @@ async function focusInput() {
         <TerminalSquare :size="20" aria-hidden="true" />
         <div>
           <h1>Linux 实战学堂</h1>
-          <span>{{ selectedLab?.lab.title ?? 'Preparing sandbox' }}</span>
+          <span>{{ session?.labTitle ?? 'Preparing sandbox' }}</span>
         </div>
       </div>
       <div class="terminal-status" aria-label="当前学习状态">

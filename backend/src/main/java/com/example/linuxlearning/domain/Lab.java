@@ -39,6 +39,10 @@ public class Lab {
     @Column(nullable = false, length = 120)
     private String imageRef;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 24)
+    private LearningPath learningPath;
+
     @Column(nullable = false)
     private int cpuCores;
 
@@ -66,11 +70,12 @@ public class Lab {
     protected Lab() {
     }
 
-    public Lab(String title, String description, String imageRef, int cpuCores, int memoryMb,
+    public Lab(String title, String description, String imageRef, LearningPath learningPath, int cpuCores, int memoryMb,
                int timeoutMinutes, String networkWhitelist, SandboxTier sandboxTier, PublishStatus status) {
         this.title = title;
         this.description = description;
         this.imageRef = imageRef;
+        this.learningPath = learningPath;
         this.cpuCores = cpuCores;
         this.memoryMb = memoryMb;
         this.timeoutMinutes = timeoutMinutes;
@@ -102,6 +107,10 @@ public class Lab {
 
     public String getImageRef() {
         return imageRef;
+    }
+
+    public LearningPath getLearningPath() {
+        return learningPath;
     }
 
     public int getCpuCores() {

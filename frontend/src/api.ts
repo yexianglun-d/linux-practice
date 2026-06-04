@@ -1,9 +1,8 @@
 import type {
   ApiResponse,
-  CatalogResponse,
   CheckTaskResponse,
   LabSessionResponse,
-  LearningProgressResponse,
+  LearningPathCode,
 } from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -21,14 +20,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return payload.data
 }
 
-export function getCatalog() {
-  return request<CatalogResponse>('/api/catalog')
-}
-
-export function startLabSession(labId: number) {
-  return request<LabSessionResponse>('/api/lab-sessions', {
+export function startDefaultLabSession(learningPath?: LearningPathCode) {
+  return request<LabSessionResponse>('/api/lab-sessions/default', {
     method: 'POST',
-    body: JSON.stringify({ labId }),
+    body: JSON.stringify({ learningPath }),
   })
 }
 
@@ -47,52 +42,4 @@ export function resetLabSession(sessionId: number) {
   return request<LabSessionResponse>(`/api/lab-sessions/${sessionId}/reset`, {
     method: 'POST',
   })
-}
-
-export function createCourse(input: {
-  title: string
-  summary: string
-  initialModuleTitle: string
-  initialLessonTitle: string
-}) {
-  return request<{ id: number }>('/api/admin/courses', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  })
-}
-
-export function createLab(input: {
-  lessonId: number
-  title: string
-  description: string
-  imageRef: string
-  cpuCores: number
-  memoryMb: number
-  timeoutMinutes: number
-  networkWhitelist: string
-  sandboxTier: string
-}) {
-  return request<{ id: number }>('/api/admin/labs', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  })
-}
-
-export function createTask(input: {
-  labId: number
-  title: string
-  instruction: string
-  checkerType: string
-  expected: string
-  hint: string
-  score: number
-}) {
-  return request<{ id: number }>('/api/admin/tasks', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  })
-}
-
-export function getLearningProgress() {
-  return request<LearningProgressResponse>('/api/admin/learning-progress')
 }

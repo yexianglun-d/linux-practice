@@ -4,7 +4,7 @@ import com.example.linuxlearning.common.ApiResponse;
 import com.example.linuxlearning.dto.CheckTaskRequest;
 import com.example.linuxlearning.dto.CheckTaskResponse;
 import com.example.linuxlearning.dto.LabSessionResponse;
-import com.example.linuxlearning.dto.StartLabSessionRequest;
+import com.example.linuxlearning.dto.StartDefaultLabSessionRequest;
 import com.example.linuxlearning.service.LabSessionService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,9 +24,9 @@ public class LabSessionController {
         this.labSessionService = labSessionService;
     }
 
-    @PostMapping
-    public ApiResponse<LabSessionResponse> start(@Valid @RequestBody StartLabSessionRequest request) {
-        return ApiResponse.ok(labSessionService.start(request));
+    @PostMapping("/default")
+    public ApiResponse<LabSessionResponse> startDefault(@RequestBody(required = false) StartDefaultLabSessionRequest request) {
+        return ApiResponse.ok(labSessionService.startDefault(request));
     }
 
     @GetMapping("/{sessionId}")

@@ -1,11 +1,10 @@
 package com.example.linuxlearning;
 
-import com.example.linuxlearning.dto.CatalogResponse;
 import com.example.linuxlearning.dto.CheckTaskRequest;
 import com.example.linuxlearning.dto.CheckTaskResponse;
 import com.example.linuxlearning.dto.LabSessionResponse;
-import com.example.linuxlearning.dto.StartLabSessionRequest;
-import com.example.linuxlearning.service.CatalogService;
+import com.example.linuxlearning.dto.StartDefaultLabSessionRequest;
+import com.example.linuxlearning.domain.LearningPath;
 import com.example.linuxlearning.service.LabSessionService;
 import com.example.linuxlearning.service.TerminalTranscriptService;
 import org.junit.jupiter.api.Test;
@@ -18,9 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LabSessionServiceTest {
 
     @Autowired
-    private CatalogService catalogService;
-
-    @Autowired
     private LabSessionService labSessionService;
 
     @Autowired
@@ -28,14 +24,16 @@ class LabSessionServiceTest {
 
     @Test
     void shouldStartCheckAndResetLabSession() {
-        CatalogResponse.LabView lab = firstLab();
-        LabSessionResponse session = labSessionService.start(new StartLabSessionRequest(null, lab.id()));
+        LabSessionResponse session = labSessionService.startDefault(null);
 
         assertThat(session.status()).isEqualTo("RUNNING");
         assertThat(session.vmId()).startsWith("vm-");
-        assertThat(session.tasks()).hasSameSizeAs(lab.tasks());
+        assertThat(session.tasks()).isNotEmpty();
+        assertThat(session.tasks().getFirst().instruction()).contains("pwd");
+        assertThat(session.tasks().getFirst().hint()).isNotBlank();
+        assertThat(session.tasks().getFirst().score()).isPositive();
 
-        Long firstTaskId = lab.tasks().getFirst().id();
+        Long firstTaskId = session.tasks().getFirst().taskId();
         transcriptService.append(session.id(), "$ pwd\n/home/student");
         CheckTaskResponse checkResult = labSessionService.check(
                 session.id(),
@@ -51,14 +49,11 @@ class LabSessionServiceTest {
         assertThat(resetSession.tasks()).allMatch(task -> !task.passed());
     }
 
-    private CatalogResponse.LabView firstLab() {
-        return catalogService.catalog()
-                .courses()
-                .getFirst()
-                .modules()
-                .getFirst()
-                .lessons()
-                .getFirst()
-                .lab();
+    @Test
+    void shouldStartOpsDefaultLabSession() {
+        LabSessionResponse session = labSessionService.startDefault(new StartDefaultLabSessionRequest(LearningPath.OPS));
+
+        assertThat(session.status()).isEqualTo("RUNNING");
+        assertThat(session.labTitle()).contains("Nginx");
     }
 }

@@ -36,7 +36,6 @@ public class DemoDataInitializer implements CommandLineRunner {
         }
         userAccountRepository.save(new UserAccount("student", "默认学员", Role.STUDENT, LearningPath.BEGINNER));
         userAccountRepository.save(new UserAccount("ops", "运维提升学员", Role.STUDENT, LearningPath.OPS));
-        userAccountRepository.save(new UserAccount("admin", "内容管理员", Role.ADMIN, LearningPath.OPS));
         courseRepository.save(buildCourse());
     }
 
@@ -60,6 +59,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "基础命令热身",
                 "在真实 VM 里完成 pwd、whoami、touch 等基础命令，并由系统检查输出和文件痕迹。",
                 "ubuntu-22.04-foundation",
+                LearningPath.BEGINNER,
                 1,
                 1024,
                 30,
@@ -97,6 +97,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "Nginx 服务状态检查",
                 "在 VM 中检查 Nginx 服务运行状态，理解 active、failed 和日志定位的区别。",
                 "ubuntu-22.04-nginx",
+                LearningPath.OPS,
                 2,
                 2048,
                 45,
@@ -125,6 +126,7 @@ public class DemoDataInitializer implements CommandLineRunner {
                 "K8s 入门状态检查",
                 "在预置集群节点中执行 kubectl 命令，识别 Pod READY、STATUS 和重启次数。",
                 "kubevirt-k8s-baseline",
+                LearningPath.OPS,
                 2,
                 4096,
                 60,
