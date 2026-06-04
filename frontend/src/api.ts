@@ -13,11 +13,27 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
     ...init,
   })
-  const payload = (await response.json()) as ApiResponse<T>
+  const rawBody = await response.text()
+  const payload = parseApiResponse<T>(response, rawBody)
   if (!response.ok || !payload.success) {
     throw new Error(payload.message || '请求失败')
   }
   return payload.data
+}
+
+function parseApiResponse<T>(response: Response, rawBody: string): ApiResponse<T> {
+  if (!rawBody.trim()) {
+    throw new Error(apiUnavailableMessage(response.status))
+  }
+  try {
+    return JSON.parse(rawBody) as ApiResponse<T>
+  } catch {
+    throw new Error(response.ok ? '服务端返回了无法解析的数据。' : apiUnavailableMessage(response.status))
+  }
+}
+
+function apiUnavailableMessage(status: number) {
+  return `服务端暂时不可用（HTTP ${status}）：请确认 Spring Boot 后端已启动。`
 }
 
 export function startDefaultLabSession(learningPath?: LearningPathCode) {
